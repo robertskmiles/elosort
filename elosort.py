@@ -86,13 +86,14 @@ class ELOSort:
 	index.exposed = True
 
 
-
-
 if __name__ == "__main__":
 
 	parser = OptionParser()
 	parser.add_option("--file", dest="file",
 					help="EMG trace file name", metavar="FILE")
+	parser.add_option("--dbname", dest="dbname", default=".elosortdb.sql3",
+					help="Name of ranking database file", metavar="NAME")
+
 
 	(opts, args) = parser.parse_args()
 
@@ -104,7 +105,8 @@ if __name__ == "__main__":
 	basedir = os.path.abspath(basedir)
 
 
-	filename = os.path.join(basedir, ".elosortdb.sql3")
+	filename = os.path.join(basedir, opts.dbname)
+	print filename
 
 	db = ELODB(filename)
 
@@ -113,11 +115,10 @@ if __name__ == "__main__":
 
 	print items
 	print os.path.abspath(basedir)
-	
 
 	conf = {'/static': {'tools.staticdir.on': True,
-				'tools.staticdir.dir': "/"
-				}
+						'tools.staticdir.dir': "/"
+						}
 			}
 
 	cherrypy.quickstart(ELOSort(db, items), "/", config=conf)
