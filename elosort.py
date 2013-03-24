@@ -145,9 +145,12 @@ class ELOSort:
 			else:
 				return "Invalid value for result"
 
-		im1 = self.items.next()
-		im2 = self.items.next()
-		return template % locals()
+		vars = {
+			"im1" : self.items.next(),
+			"im2" : self.items.next()
+		}
+
+		return template % vars
 
 	index.exposed = True
 
@@ -171,8 +174,6 @@ class ELOSort:
 if __name__ == "__main__":
 
 	parser = OptionParser()
-	parser.add_option("--file", dest="file",
-					help="EMG trace file name", metavar="FILE")
 	parser.add_option("--dbname", dest="dbname", default=".elosortdb.sql3",
 					help="Name of ranking database file", metavar="NAME")
 
