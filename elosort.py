@@ -68,19 +68,33 @@ class ELODB:
 		del c
 
 
+class Itemcollection:
+	def __init__(self, items):
+		self.items = items
+		self.shuffle()
+
+	def shuffle(self):
+		self.itemstack = self.items[:]
+		random.shuffle(self.itemstack)
+
+	def next(self):
+		if not self.itemstack:
+			self.shuffle()
+
+		return self.itemstack.pop()
+
+
 class ELOSort:
 	def __init__(self, db, items):
 		self.db = db
 		self.items = items
-		self.itemstack = self.items[:]
-		random.shuffle(self.itemstack)
 
 	def index(self, winner=None, loser=None):
 		if winner and loser:
 			pass
 
-		p1 = self.itemstack.pop()
-		p2 = self.itemstack.pop()
+		p1 = self.items.next()
+		p2 = self.items.next()
 		return '''<html><img src="static/%s"><img src="static/%s"></html>''' % (p1, p2)
 
 	index.exposed = True
@@ -111,7 +125,7 @@ if __name__ == "__main__":
 	db = ELODB(filename)
 
 	items = glob.glob(os.path.join(basedir, "*.jpg"))
-	random.shuffle(items)
+	itemcollection = Itemcollection(items)
 
 	print items
 	print os.path.abspath(basedir)
@@ -121,4 +135,4 @@ if __name__ == "__main__":
 						}
 			}
 
-	cherrypy.quickstart(ELOSort(db, items), "/", config=conf)
+	cherrypy.quickstart(ELOSort(db, itemcollection), "/", config=conf)
