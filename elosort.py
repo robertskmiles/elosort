@@ -8,22 +8,26 @@ import hashlib
 import glob
 import random
 
+
 STARTRANK = 1000
+
 
 class ELODB:
 	def __init__(self, dbfile):
+		self.dbfile = dbfile
 		try:
-			open(dbfile)
-			self.con = sqlite3.connect(dbfile)
-			print "\""+dbfile+"\" found :)"
+			open(self.dbfile)
+			con = sqlite3.connect(self.dbfile)
+			print "\""+self.dbfile+"\" found :)"
 		except IOError:
-			print "\""+dbfile+"\" not found, making a new one"
-			self.con = sqlite3.connect(dbfile)
-			c = self.con.cursor()
+			print "\""+self.dbfile+"\" not found, making a new one"
+			con = sqlite3.connect(self.dbfile)
+			c = con.cursor()
 			c.execute('''create table Item
 						(hash text PRIMARY_KEY, path text, rank integer)''')
-			self.con.commit()
+			con.commit()
 			c.close()
+			con.close()
 
 	def filehash(self, filepath):
 		f = open(filepath)
@@ -41,31 +45,48 @@ class ELODB:
 		"""
 		filehash = self.filehash(filepath)
 
-		c = self.con.cursor()
-		c.execute('''select rank from Item
+		con = sqlite3.connect(self.dbfile)
+		c = con.cursor()
+		c.execute('''SELECT rank from Item
 						where hash = ?''', (filehash,))
 
 		result = c.fetchone()
-		del c
+		c.close()
+		con.close()
 
 		if result:
-			filehash, path, rank = result
+			rank = result[0]
 			return rank
 		else:
 			self.initrank(filepath)
 			return STARTRANK
+
+	def setrank(self, filepath, newrank):
+		filehash = self.filehash(filepath)
+
+		con = sqlite3.connect(self.dbfile)
+		c = con.cursor()
+		c.execute("""UPDATE Item
+					SET path = ?, rank = ? WHERE hash = ?""",
+					(filepath, newrank, filehash))
+
+		con.commit()
+		c.close()
+		con.close()
 
 	def initrank(self, filepath):
 		"""Add a new file to the db, with the starting rank"""
 		filehash = self.filehash(filepath)
 		abspath = os.path.abspath(filepath)
 
-		c = self.con.cursor()
-		c.execute('''insert into Item values (?, ?, ?)''',
+		con = sqlite3.connect(self.dbfile)
+		c = con.cursor()
+		c.execute('''INSERT into Item values (?, ?, ?)''',
 					(filehash, abspath, STARTRANK))
 
-		self.con.commit()
-		del c
+		con.commit()
+		c.close()
+		con.close()
 
 
 class Itemcollection:
@@ -83,21 +104,46 @@ class Itemcollection:
 
 		return self.itemstack.pop()
 
+
 template = '''
 <html>
-	<a href="/?winner=%(im1)s&loser=%(im2)s"><img src="static/%(im2)s" width="49%%"></a>
-	<a href="/?winner=%(im2)s&loser=%(im1)s"><img src="static/%(im1)s" width="49%%"></a>
+<head>
+	<script language="javascript" type="text/javascript">
+		document.onkeyup = KeyPressed;
+
+		function KeyPressed( e ) {
+			var key = ( window.event ) ? event.keyCode : e.keyCode;
+
+			switch( key ) {
+				case 37: //left
+					window.location.href="/?a=%(im1)s&b=%(im2)s&result=1"
+					break;
+				case 39: //right
+					window.location.href="/?a=%(im2)s&b=%(im1)s&result=1"
+					break;
+			}
+		}
+	</script>
+</head>
+<body>
+	<a href="/?a=%(im1)s&b=%(im2)s&result=1"><img src="static/%(im1)s" width="49%%"></a>
+	<a href="/?a=%(im2)s&b=%(im1)s&result=1"><img src="static/%(im2)s" width="49%%"></a>
+</body>
 </html>
 '''
+
 
 class ELOSort:
 	def __init__(self, db, items):
 		self.db = db
 		self.items = items
 
-	def index(self, winner=None, loser=None):
-		if winner and loser:
-			pass
+	def index(self, a=None, b=None, result=None):
+		if a and b and result:
+			if result in ("0", "1", "0.5"):
+				self.match(a, b, float(result))
+			else:
+				return "Invalid value for result"
 
 		im1 = self.items.next()
 		im2 = self.items.next()
@@ -105,6 +151,22 @@ class ELOSort:
 
 	index.exposed = True
 
+	def match(self, a, b, result):
+		k = 16
+		arank = self.db.getrank(a)
+		brank = self.db.getrank(b)
+		expected = 1 / (1 + (10 ** ((brank - arank) / 400.)))
+
+		newarank = arank + (k * (result - expected))
+		newbrank = brank - (k * (result - expected))
+
+		self.db.setrank(a, newarank)
+		self.db.setrank(b, newbrank)
+
+		print a, "has beaten", b
+		#print a, "rank changed from", arank, "to", self.db.getrank(a)
+		#print b, "rank changed from", brank, "to", self.db.getrank(b)
+		#exit()
 
 if __name__ == "__main__":
 
@@ -113,7 +175,6 @@ if __name__ == "__main__":
 					help="EMG trace file name", metavar="FILE")
 	parser.add_option("--dbname", dest="dbname", default=".elosortdb.sql3",
 					help="Name of ranking database file", metavar="NAME")
-
 
 	(opts, args) = parser.parse_args()
 
@@ -124,17 +185,11 @@ if __name__ == "__main__":
 
 	basedir = os.path.abspath(basedir)
 
-
-	filename = os.path.join(basedir, opts.dbname)
-	print filename
-
-	db = ELODB(filename)
+	dbfilename = os.path.join(basedir, opts.dbname)
+	db = ELODB(dbfilename)
 
 	items = glob.glob(os.path.join(basedir, "*.jpg"))
 	itemcollection = Itemcollection(items)
-
-	print items
-	print os.path.abspath(basedir)
 
 	conf = {'/static': {'tools.staticdir.on': True,
 						'tools.staticdir.dir': "/"
