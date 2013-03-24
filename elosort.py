@@ -3,53 +3,55 @@
 import cherrypy
 import sqlite3
 from optparse import OptionParser
-import sys
 import os
-
-
-parser = OptionParser()
-parser.add_option("--emgfile", dest="emgfile",
-				help="EMG trace file name", metavar="FILE")
-
-(opts, args) = parser.parse_args()
-
-print opts, args
-
-if args:
-	basedir = args[0]
-else:
-	basedir = "."
-
-
-filename = os.path.join(basedir, ".elosortdb.sql3")
+import hashlib
 
 
 class ELODB:
 	def __init__(self, dbfile):
 		try:
-			self.conn = sqlite3.connect(dbfile)
+			self.con = sqlite3.connect(dbfile)
 			print "\""+dbfile+"\" found :)"
 		except IOError:
 			print "\""+dbfile+"\" not found, making a new one"
-			self.conn = sqlite3.connect(dbfile)
-			c = self.conn.cursor()
+			self.con = sqlite3.connect(dbfile)
+			c = self.con.cursor()
 			c.execute('''create table Item
 						(hash text PRIMARY_KEY, path text, rank integer)''')
-			self.conn.commit()
+			self.con.commit()
 			c.close()
+
+	def getrank(self, filepath):
+		f = open(filepath)
+
+		m = hashlib.sha512()
+		m.update(f.read())
+		filehash = m.hexdigest()
+
+		c = self.con.cursor()
+		with c:
+			c.execute('''select rank from Item
+						where hash = ?)''', (filehash,))
+
+			result = c.fetchone()
+
+		if result:
+			filehash, path, rank = result
+			return rank
+		else:
+			return None
+
 
 
 class ELOSort:
-	def __init__(self):
-		pass
+	def __init__(self, db):
+		self.db = db
 
 	def index(self, winner=None, loser=None):
 		if winner and loser:
-			c.execute('''select rank from Item
-			where hash in (select cheat from taglink
-			where tag=?)''', (keyword,) )
 
-			results = [Cheat(cmd,desc,idno=cheatid) for cheatid, cmd, desc in c.fetchall()]
+
+			
 
 			if sort_by != '':
 				results.sort(key=attrgetter(sort_by), reverse=sort_reverse)
@@ -59,4 +61,25 @@ class ELOSort:
 	index.exposed = True
 
 
-cherrypy.quickstart(ELOSort())
+
+
+if __name__ == "__main__":
+
+	parser = OptionParser()
+	parser.add_option("--emgfile", dest="emgfile",
+					help="EMG trace file name", metavar="FILE")
+
+	(opts, args) = parser.parse_args()
+
+	print opts, args
+
+	if args:
+		basedir = args[0]
+	else:
+		basedir = "."
+
+
+	filename = os.path.join(basedir, ".elosortdb.sql3")
+
+
+	cherrypy.quickstart(ELOSort())
