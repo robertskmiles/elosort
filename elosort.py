@@ -7,9 +7,12 @@ import os
 import hashlib
 
 
+STARTRANK = 1000
+
 class ELODB:
 	def __init__(self, dbfile):
 		try:
+			open(dbfile)
 			self.con = sqlite3.connect(dbfile)
 			print "\""+dbfile+"\" found :)"
 		except IOError:
@@ -21,26 +24,41 @@ class ELODB:
 			self.con.commit()
 			c.close()
 
-	def getrank(self, filepath):
+	def filehash(self, filepath):
 		f = open(filepath)
 
-		m = hashlib.sha512()
+		m = hashlib.md5()
 		m.update(f.read())
-		filehash = m.hexdigest()
+
+		return m.hexdigest()
+
+	def getrank(self, filepath):
+		filehash = self.filehash(filepath)
 
 		c = self.con.cursor()
-		with c:
-			c.execute('''select rank from Item
-						where hash = ?)''', (filehash,))
+		c.execute('''select rank from Item
+						where hash = ?''', (filehash,))
 
-			result = c.fetchone()
+		result = c.fetchone()
+		del c
 
 		if result:
 			filehash, path, rank = result
 			return rank
 		else:
-			return None
+			self.initrank(filepath)
+			return STARTRANK
 
+	def initrank(self, filepath):
+		filehash = self.filehash(filepath)
+		abspath = os.path.abspath(filepath)
+
+		c = self.con.cursor()
+		c.execute('''insert into Item values (?, ?, ?)''',
+					(filehash, abspath, STARTRANK))
+
+		self.con.commit()
+		del c
 
 
 class ELOSort:
@@ -49,7 +67,7 @@ class ELOSort:
 
 	def index(self, winner=None, loser=None):
 		if winner and loser:
-
+			pass
 
 			
 
@@ -66,12 +84,10 @@ class ELOSort:
 if __name__ == "__main__":
 
 	parser = OptionParser()
-	parser.add_option("--emgfile", dest="emgfile",
+	parser.add_option("--file", dest="file",
 					help="EMG trace file name", metavar="FILE")
 
 	(opts, args) = parser.parse_args()
-
-	print opts, args
 
 	if args:
 		basedir = args[0]
@@ -81,5 +97,8 @@ if __name__ == "__main__":
 
 	filename = os.path.join(basedir, ".elosortdb.sql3")
 
+	db = ELODB(filename)
+	print db.con
+	print db.getrank(opts.file)
 
-	cherrypy.quickstart(ELOSort())
+	#cherrypy.quickstart(ELOSort(db))
