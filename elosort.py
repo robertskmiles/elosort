@@ -5,7 +5,8 @@ import sqlite3
 from optparse import OptionParser
 import os
 import hashlib
-
+import glob
+import random
 
 STARTRANK = 1000
 
@@ -33,6 +34,11 @@ class ELODB:
 		return m.hexdigest()
 
 	def getrank(self, filepath):
+		"""
+		Get the ELO rank for a given file.
+
+		If the file isn't already in the db, add it with the starting rank
+		"""
 		filehash = self.filehash(filepath)
 
 		c = self.con.cursor()
@@ -50,6 +56,7 @@ class ELODB:
 			return STARTRANK
 
 	def initrank(self, filepath):
+		"""Add a new file to the db, with the starting rank"""
 		filehash = self.filehash(filepath)
 		abspath = os.path.abspath(filepath)
 
@@ -62,19 +69,19 @@ class ELODB:
 
 
 class ELOSort:
-	def __init__(self, db):
+	def __init__(self, db, items):
 		self.db = db
+		self.items = items
+		self.itemstack = self.items[:]
+		random.shuffle(self.itemstack)
 
 	def index(self, winner=None, loser=None):
 		if winner and loser:
 			pass
 
-			
-
-			if sort_by != '':
-				results.sort(key=attrgetter(sort_by), reverse=sort_reverse)
-
-		return """<html><b>%s</b> beat <b>%s</b></html>""" % (winner, loser)
+		p1 = self.itemstack.pop()
+		p2 = self.itemstack.pop()
+		return '''<html><img src="static/%s"><img src="static/%s"></html>''' % (p1, p2)
 
 	index.exposed = True
 
@@ -98,7 +105,16 @@ if __name__ == "__main__":
 	filename = os.path.join(basedir, ".elosortdb.sql3")
 
 	db = ELODB(filename)
-	print db.con
-	print db.getrank(opts.file)
 
-	#cherrypy.quickstart(ELOSort(db))
+	items = glob.glob(os.path.join(basedir, "*.jpg"))
+	random.shuffle(items)
+
+	print items
+
+
+	conf = {'/static': {'tools.staticdir.on': True,
+				'tools.staticdir.dir': os.path.abspath(basedir)
+				}
+			}
+
+	cherrypy.quickstart(ELOSort(db, items), "/", config=conf)
