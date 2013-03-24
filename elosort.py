@@ -83,6 +83,12 @@ class Itemcollection:
 
 		return self.itemstack.pop()
 
+template = '''
+<html>
+	<a href="/?winner=%(im1)s&loser=%(im2)s"><img src="static/%(im2)s" width="49%%"></a>
+	<a href="/?winner=%(im2)s&loser=%(im1)s"><img src="static/%(im1)s" width="49%%"></a>
+</html>
+'''
 
 class ELOSort:
 	def __init__(self, db, items):
@@ -93,9 +99,9 @@ class ELOSort:
 		if winner and loser:
 			pass
 
-		p1 = self.items.next()
-		p2 = self.items.next()
-		return '''<html><img src="static/%s"><img src="static/%s"></html>''' % (p1, p2)
+		im1 = self.items.next()
+		im2 = self.items.next()
+		return template % locals()
 
 	index.exposed = True
 
