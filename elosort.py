@@ -101,6 +101,8 @@ if __name__ == "__main__":
 	else:
 		basedir = "."
 
+	basedir = os.path.abspath(basedir)
+
 
 	filename = os.path.join(basedir, ".elosortdb.sql3")
 
@@ -110,10 +112,11 @@ if __name__ == "__main__":
 	random.shuffle(items)
 
 	print items
-
+	print os.path.abspath(basedir)
+	
 
 	conf = {'/static': {'tools.staticdir.on': True,
-				'tools.staticdir.dir': os.path.abspath(basedir)
+				'tools.staticdir.dir': "/"
 				}
 			}
 
