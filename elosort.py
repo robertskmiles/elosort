@@ -88,6 +88,22 @@ class Elodb:
 		c.close()
 		con.close()
 
+	def sql(self, query):
+		"""
+		Run an SQL Query on the database
+
+		Mostly used for testing and provisional features
+		"""
+
+		con = sqlite3.connect(self.dbfile)
+		c = con.cursor()
+		c.execute(query)
+
+		result = c.fetchall()
+		c.close()
+		con.close()
+
+		return result
 
 class Itemcollection:
 	def __init__(self, items):
@@ -166,6 +182,10 @@ class Elosort:
 		self.db.setrank(a, newarank)
 		self.db.setrank(b, newbrank)
 
+	def results(self):
+		return "<il>%s</il>" % "\n".join(["<li>%s</li>" % str(i) for i in self.db.sql('''SELECT path, rank from Item ORDER BY rank DESC''')])
+
+	results.exposed = True
 
 if __name__ == "__main__":
 
