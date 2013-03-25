@@ -12,7 +12,7 @@ import random
 STARTRANK = 1000
 
 
-class ELODB:
+class Elodb:
 	def __init__(self, dbfile):
 		self.dbfile = dbfile
 		try:
@@ -39,7 +39,7 @@ class ELODB:
 
 	def getrank(self, filepath):
 		"""
-		Get the ELO rank for a given file.
+		Get the Elo rank for a given file.
 
 		If the file isn't already in the db, add it with the starting rank
 		"""
@@ -133,7 +133,7 @@ template = '''
 '''
 
 
-class ELOSort:
+class Elosort:
 	def __init__(self, db, items):
 		self.db = db
 		self.items = items
@@ -186,7 +186,7 @@ if __name__ == "__main__":
 	basedir = os.path.abspath(basedir)
 
 	dbfilename = os.path.join(basedir, opts.dbname)
-	db = ELODB(dbfilename)
+	db = Elodb(dbfilename)
 
 
 	filetypes = opts.filetypes.split(",")
@@ -200,4 +200,4 @@ if __name__ == "__main__":
 						}
 			}
 
-	cherrypy.quickstart(ELOSort(db, itemcollection), "/", config=conf)
+	cherrypy.quickstart(Elosort(db, itemcollection), "/", config=conf)
