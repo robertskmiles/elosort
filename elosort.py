@@ -88,6 +88,22 @@ class Elodb:
 		c.close()
 		con.close()
 
+	def getresults(self, start=0, count=10):
+		con = sqlite3.connect(self.dbfile)
+		c = con.cursor()
+		c.execute('''SELECT * from Item ORDER BY rank DESC''')
+
+		if start:
+			c.fetchmany(start)
+
+		result = c.fetchmany(count)
+		c.close()
+		con.close()
+
+		fields = ['hash', 'path', 'rank']
+		result = [dict(zip(fields, row)) for row in result]
+		return result
+
 	def sql(self, query):
 		"""
 		Run an SQL Query on the database
@@ -183,7 +199,8 @@ class Elosort:
 		self.db.setrank(b, newbrank)
 
 	def results(self):
-		return "<il>%s</il>" % "\n".join(["<li>%s</li>" % str(i) for i in self.db.sql('''SELECT path, rank from Item ORDER BY rank DESC''')])
+
+		return "<ol>%s</ol>" % "\n".join(["<li><a href='static/%(path)s'><img src='static/%(path)s' width='60'></a> %(rank)f</li>" % i for i in self.db.getresults()])
 
 	results.exposed = True
 
