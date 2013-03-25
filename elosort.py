@@ -160,6 +160,8 @@ template = '''
 <body>
 	<a href="/?a=%(im1)s&b=%(im2)s&result=1"><img src="static/%(im1)s" width="49%%"></a>
 	<a href="/?a=%(im2)s&b=%(im1)s&result=1"><img src="static/%(im2)s" width="49%%"></a>
+	<div width="49%%"" style="float:left ;text-align:center;"><a href="static/%(im1)s">View Fullsize</a></div>
+	<div width="49%%"" style="float:right;text-align:center;"><a href="static/%(im2)s">View Fullsize</a></div>
 </body>
 </html>
 '''
@@ -200,7 +202,13 @@ class Elosort:
 
 	def results(self):
 
-		return "<ol>%s</ol>" % "\n".join(["<li><a href='static/%(path)s'><img src='static/%(path)s' width='60'></a> %(rank)f</li>" % i for i in self.db.getresults()])
+		litemplate = """<li>
+							<a href='static/%(path)s'>
+								<img src='static/%(path)s' width='100'></a>
+							%(rank)f
+						</li>"""
+
+		return "<ol>%s</ol>" % "\n".join([litemplate % i for i in self.db.getresults()])
 
 	results.exposed = True
 
