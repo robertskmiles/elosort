@@ -166,16 +166,15 @@ class ELOSort:
 		self.db.setrank(a, newarank)
 		self.db.setrank(b, newbrank)
 
-		print a, "has beaten", b
-		#print a, "rank changed from", arank, "to", self.db.getrank(a)
-		#print b, "rank changed from", brank, "to", self.db.getrank(b)
-		#exit()
 
 if __name__ == "__main__":
 
 	parser = OptionParser()
 	parser.add_option("--dbname", dest="dbname", default=".elosortdb.sql3",
 					help="Name of ranking database file", metavar="NAME")
+	parser.add_option("--filetypes", dest="filetypes", default="jpg,png,gif",
+					help="comma separated list of file extensions", metavar="LIST")
+
 
 	(opts, args) = parser.parse_args()
 
@@ -189,7 +188,11 @@ if __name__ == "__main__":
 	dbfilename = os.path.join(basedir, opts.dbname)
 	db = ELODB(dbfilename)
 
-	items = glob.glob(os.path.join(basedir, "*.jpg"))
+
+	filetypes = opts.filetypes.split(",")
+	items = []
+	for filetype in filetypes:
+		items += glob.glob(os.path.join(basedir, "*."+filetype))
 	itemcollection = Itemcollection(items)
 
 	conf = {'/static': {'tools.staticdir.on': True,
