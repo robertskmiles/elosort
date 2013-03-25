@@ -219,7 +219,8 @@ if __name__ == "__main__":
 					help="Name of ranking database file", metavar="NAME")
 	parser.add_option("--filetypes", dest="filetypes", default="jpg,png,gif",
 					help="comma separated list of file extensions", metavar="LIST")
-
+	parser.add_option("--port", dest="port", default=8080, type="int",
+					help="Port to run the server on", metavar="PORTNUM")
 
 	(opts, args) = parser.parse_args()
 
@@ -233,14 +234,14 @@ if __name__ == "__main__":
 	dbfilename = os.path.join(basedir, opts.dbname)
 	db = Elodb(dbfilename)
 
-
 	filetypes = opts.filetypes.split(",")
 	items = []
 	for filetype in filetypes:
 		items += glob.glob(os.path.join(basedir, "*."+filetype))
 	itemcollection = Itemcollection(items)
 
-	conf = {'/static': {'tools.staticdir.on': True,
+	conf = {'global': {'server.socket_port': opts.port },
+			'/static': {'tools.staticdir.on': True,
 						'tools.staticdir.dir': "/"
 						}
 			}
