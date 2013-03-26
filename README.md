@@ -11,9 +11,9 @@ The [Elo rating system](http://en.wikipedia.org/wiki/Elo_rating_system) was deve
 
 ## Usage
 
-Run `elosort.py` in the directory with the photos, and then point your browser at `http://localhost:8080`. Click the image you prefer (or press the left or right arrow key). The vote is registered, and a new pair of images will appear. After you've done some voting, you can look at the rankings at the `http://localhost:8080/results` page.
+Run `elosort` in the directory with the photos, and then point your browser at `http://localhost:8080`. Click the image you prefer (or press the left or right arrow key). The vote is registered, and a new pair of images will appear. After you've done some voting, you can look at the rankings at the `http://localhost:8080/results` page.
 
-Run `elosort.py --help` to get information about command-line options.
+Run `elosort --help` to get information about command-line options.
 
 ## Notes
 
