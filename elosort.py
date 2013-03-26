@@ -9,7 +9,7 @@ import glob
 import random
 
 
-STARTRANK = 1000
+STARTRATING = 1000
 
 
 class Elodb:
@@ -24,7 +24,7 @@ class Elodb:
 			con = sqlite3.connect(self.dbfile)
 			c = con.cursor()
 			c.execute('''create table Item
-						(hash text PRIMARY_KEY, path text, rank integer)''')
+						(hash text PRIMARY_KEY, path text, rating integer)''')
 			con.commit()
 			c.close()
 			con.close()
@@ -37,17 +37,17 @@ class Elodb:
 
 		return m.hexdigest()
 
-	def getrank(self, filepath):
+	def getrating(self, filepath):
 		"""
-		Get the Elo rank for a given file.
+		Get the Elo rating for a given file.
 
-		If the file isn't already in the db, add it with the starting rank
+		If the file isn't already in the db, add it with the starting rating
 		"""
 		filehash = self.filehash(filepath)
 
 		con = sqlite3.connect(self.dbfile)
 		c = con.cursor()
-		c.execute('''SELECT rank from Item
+		c.execute('''SELECT rating from Item
 						where hash = ?''', (filehash,))
 
 		result = c.fetchone()
@@ -55,34 +55,34 @@ class Elodb:
 		con.close()
 
 		if result:
-			rank = result[0]
-			return rank
+			rating = result[0]
+			return rating
 		else:
-			self.initrank(filepath)
-			return STARTRANK
+			self.initrating(filepath)
+			return STARTRATING
 
-	def setrank(self, filepath, newrank):
+	def setrating(self, filepath, newrating):
 		filehash = self.filehash(filepath)
 
 		con = sqlite3.connect(self.dbfile)
 		c = con.cursor()
 		c.execute("""UPDATE Item
-					SET path = ?, rank = ? WHERE hash = ?""",
-					(filepath, newrank, filehash))
+					SET path = ?, rating = ? WHERE hash = ?""",
+					(filepath, newrating, filehash))
 
 		con.commit()
 		c.close()
 		con.close()
 
-	def initrank(self, filepath):
-		"""Add a new file to the db, with the starting rank"""
+	def initrating(self, filepath):
+		"""Add a new file to the db, with the starting rating"""
 		filehash = self.filehash(filepath)
 		abspath = os.path.abspath(filepath)
 
 		con = sqlite3.connect(self.dbfile)
 		c = con.cursor()
 		c.execute('''INSERT into Item values (?, ?, ?)''',
-					(filehash, abspath, STARTRANK))
+					(filehash, abspath, STARTRATING))
 
 		con.commit()
 		c.close()
@@ -91,7 +91,7 @@ class Elodb:
 	def getresults(self, start=0, count=10):
 		con = sqlite3.connect(self.dbfile)
 		c = con.cursor()
-		c.execute('''SELECT * from Item ORDER BY rank DESC''')
+		c.execute('''SELECT * from Item ORDER BY rating DESC''')
 
 		if start:
 			c.fetchmany(start)
@@ -100,7 +100,7 @@ class Elodb:
 		c.close()
 		con.close()
 
-		fields = ['hash', 'path', 'rank']
+		fields = ['hash', 'path', 'rating']
 		result = [dict(zip(fields, row)) for row in result]
 		return result
 
@@ -190,25 +190,29 @@ class Elosort:
 
 	def match(self, a, b, result):
 		k = 16
-		arank = self.db.getrank(a)
-		brank = self.db.getrank(b)
-		expected = 1 / (1 + (10 ** ((brank - arank) / 400.)))
+		arating = self.db.getrating(a)
+		brating = self.db.getrating(b)
+		expected = 1 / (1 + (10 ** ((brating - arating) / 400.)))
 
-		newarank = arank + (k * (result - expected))
-		newbrank = brank - (k * (result - expected))
+		newarating = arating + (k * (result - expected))
+		newbrating = brating - (k * (result - expected))
 
-		self.db.setrank(a, newarank)
-		self.db.setrank(b, newbrank)
+		self.db.setrating(a, newarating)
+		self.db.setrating(b, newbrating)
 
-	def results(self):
+	def results(self, start=0, count=10):
+		start = int(start)
+		count = int(count)
 
 		litemplate = """<li>
 							<a href='static/%(path)s'>
 								<img src='static/%(path)s' width='100'></a>
-							%(rank)f
+							%(rating)f
 						</li>"""
 
-		return "<ol>%s</ol>" % "\n".join([litemplate % i for i in self.db.getresults()])
+		resultstemplate = "<ol>%s</ol><a href='?start="+str(start+count)+"'>Next</a>"
+
+		return resultstemplate % "\n".join([litemplate % i for i in self.db.getresults(start, count)])
 
 	results.exposed = True
 
@@ -216,7 +220,7 @@ if __name__ == "__main__":
 
 	parser = OptionParser()
 	parser.add_option("--dbname", dest="dbname", default=".elosortdb.sql3",
-					help="Name of ranking database file", metavar="NAME")
+					help="Name of rating database file", metavar="NAME")
 	parser.add_option("--filetypes", dest="filetypes", default="jpg,png,gif",
 					help="comma separated list of file extensions", metavar="LIST")
 	parser.add_option("--port", dest="port", default=8080, type="int",
@@ -240,7 +244,7 @@ if __name__ == "__main__":
 		items += glob.glob(os.path.join(basedir, "*."+filetype))
 	itemcollection = Itemcollection(items)
 
-	conf = {'global': {'server.socket_port': opts.port },
+	conf = {'global': {'server.socket_port': opts.port},
 			'/static': {'tools.staticdir.on': True,
 						'tools.staticdir.dir': "/"
 						}
