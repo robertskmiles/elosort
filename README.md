@@ -11,11 +11,9 @@ The [Elo rating system](http://en.wikipedia.org/wiki/Elo_rating_system) was deve
 
 ## Usage
 
-Run `elosort.py` in the directory with the photos, and then point your browser at `http://localhost:8080`. Click the image you prefer (or press the left or right arrow key). The vote is registered, and a new pair of images will appear.
+Run `elosort.py` in the directory with the photos, and then point your browser at `http://localhost:8080`. Click the image you prefer (or press the left or right arrow key). The vote is registered, and a new pair of images will appear. After you've done some voting, you can look at the rankings at the `http://localhost:8080/results` page.
 
 ## Notes
 
-This is pre-alpha software, i.e. unfinished and unfit for use. For example, the system records competitions and calculates Elo Ratings, but right now there's no visualisation so if you want to see the ratings you have to look in the database yourself.
-
-Do not expect this to work unless you are me, or a close approximation.
+This is pre-alpha software, i.e. unfinished and unfit for normal use. Expect problems, and please do report any bugs you find.
 

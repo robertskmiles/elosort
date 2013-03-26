@@ -162,6 +162,8 @@ template = '''
 	<a href="/?a=%(im2)s&b=%(im1)s&result=1"><img src="static/%(im2)s" width="49%%"></a>
 	<div width="49%%"" style="float:left ;text-align:center;"><a href="static/%(im1)s">View Fullsize</a></div>
 	<div width="49%%"" style="float:right;text-align:center;"><a href="static/%(im2)s">View Fullsize</a></div>
+
+	<p align="center"><a href="/results">See Results</a></p>
 </body>
 </html>
 '''
@@ -210,7 +212,7 @@ class Elosort:
 							%(rating)f
 						</li>"""
 
-		resultstemplate = "<ol>%s</ol><a href='?start="+str(start+count)+"'>Next</a>"
+		resultstemplate = "<p><a href='/'>Continue Rating</a></p><ol>%s</ol><a href='?start="+str(start+count)+"'>Next</a>"
 
 		return resultstemplate % "\n".join([litemplate % i for i in self.db.getresults(start, count)])
 
